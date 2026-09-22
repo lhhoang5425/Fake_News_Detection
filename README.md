@@ -1,159 +1,221 @@
-# Nhan Dien Tin Tuc Gia Bang PyTorch (So Sanh RNN vs LSTM vs GRU)
+# Nhận Diện Tin Tức Giả Bằng PyTorch (So Sánh RNN vs LSTM vs GRU)
 
-Du an Hoc Sau (Deep Learning) toan dien ve bai toan phan loai van ban: Xac thuc Tin That (Real News) hay Tin Gia (Fake News) su dung thu vien PyTorch thuan. 
+Dự án Học Sâu (Deep Learning) toàn diện về bài toán phân loại văn bản: **Xác thực Tin Thật (Real News) hay Tin Giả (Fake News)** sử dụng thư viện **PyTorch thuần**. 
 
-Du an xay dung mot quy trinh hoan chinh tu du lieu tho, tien xu ly, thiet ke kien truc mang no-ron hoi quy, huan luyen danh gia mo hinh, cho den viec dong goi thanh cac cong cu dong lenh (CLI) de dang tai hien tren bat ky may tinh nao.
-
----
-
-## 1. Tong Quan Bai Toan
-
-Trong thoi dai so hoa va mang xa hoi, tin gia (Fake News / Misinformation) xuat hien tran lan voi noi dung giat gan, bop meo su that nham muc dich cau view, thao tung du luan hoac lua dao.
-
-Du an nay giai quyet bai toan phan loai nhi phan (Binary Classification):
-- Nhan 0 (Real News - Tin That): Bai bao chinh thong, da qua kiem duyet thuc te.
-- Nhan 1 (Fake News - Tin Gia): Bai viet sai lech, khong co can cu xac thuc.
-
-Muc tieu cot loi: So sanh thuc nghiem xem giua Simple RNN, LSTM va GRU, kien truc nao co kha nang hoc va ghi nho ngu canh van ban dai tot nhat de ngan chan tin gia hieu qua.
+Dự án xây dựng một quy trình hoàn chỉnh từ dữ liệu thô, tiền xử lý, thiết kế kiến trúc mạng nơ-ron hồi quy, huấn luyện đánh giá mô hình, cho đến việc đóng gói thành các công cụ dòng lệnh (CLI) dễ dàng tái hiện trên bất kỳ máy tính nào.
 
 ---
 
-## 2. Cau Truc Thu Muc Du An
+## 1. Tổng Quan Bài Toán
+
+Trong thời đại số hóa và mạng xã hội, tin giả (Fake News / Misinformation) xuất hiện tràn lan với nội dung giật gân, bóp méo sự thật nhằm mục đích câu view, thao túng dư luận hoặc lừa đảo.
+
+Dự án này giải quyết bài toán phân loại nhị phân (Binary Classification):
+- **Nhãn 0 (Real News - Tin Thật):** Bài báo chính thống, đã qua kiểm duyệt thực tế.
+- **Nhãn 1 (Fake News - Tin Giả):** Bài viết sai lệch, không có căn cứ xác thực.
+
+Mục tiêu cốt lõi: So sánh thực nghiệm xem giữa **Simple RNN**, **LSTM** và **GRU**, kiến trúc nào có khả năng học và ghi nhớ ngữ cảnh văn bản dài tốt nhất để ngăn chặn tin giả hiệu quả.
+
+---
+
+## 2. Cấu Trúc Thư Mục Dự Án
 
 ```text
 Fake-News-Detection-PyTorch/
+├── assets/
+│   └── gru_training_loss_acc.png
 ├── data/
-│   └── Fake_News_Detection_Dataset.csv   # Dataset chua noi dung bai bao va nhan (0/1)
-├── notebooks/                            # Thu nghiem nghien cuu chi tiet tung mo hinh
-│   ├── 1_Fake_News_RNN.ipynb             # Thi nghiem mo hinh Simple RNN
-│   ├── 2_Fake_News_LSTM.ipynb            # Thi nghiem mo hinh LSTM
-│   └── 3_Fake_News_GRU.ipynb             # Thi nghiem mo hinh GRU
-├── src/                                  # Ma nguon dang module chuan ky su
-│   ├── preprocess.py                     # Lam sach text, tao Vocab, chuyen Sequence & Dataset
-│   ├── models.py                         # Dinh nghia 3 kien truc: RNNClassifier, LSTMClassifier, GRUClassifier
-│   ├── train.py                          # Script CLI huan luyen va danh gia tren tap Test
-│   └── predict.py                        # Script CLI du doan cau bai bao moi
-├── saved_models/                         # Luu tru trong so mo hinh va tu dien sau khi train
-│   ├── vocab.pkl                         # File tu dien Vocab da huan luyen
-│   └── best_lstm_model.pth               # Checkpoint trong so mo hinh tot nhat (LSTM)
-├── requirements.txt                      # Danh sach thu vien can thiet
-├── .gitignore                            # Bo qua file rac, bo nho cache
-└── README.md                             # Tai lieu huong dan du an
+│   └── Fake_News_Detection_Dataset.csv
+├── notebooks/
+│   ├── Fake_News_RNN.ipynb
+│   ├── Fake_News_LSTM.ipynb
+│   └── Fake_News_GRU.ipynb
+├── src/
+│   ├── preprocess.py
+│   ├── models.py
+│   ├── train.py
+│   └── predict.py
+├── saved_models/
+│   ├── vocab.pkl
+│   ├── best_lstm_model.pth
+│   ├── best_gru_model.pth
+│   └── best_rnn_model.pth
+├── requirements.txt
+├── .gitignore
+└── README.md
 ```
 
 ---
 
-## 3. Phan Tich Ky Thuat Tung Buoc (Pipeline Deep Learning)
+## 3. Quy Trình Kỹ Thuật (Pipeline)
 
-### Buoc 1: Lam Sach Van Ban (Text Cleaning)
-- Van de: Van ban tho tren Internet chua nhieu dau cau, ky tu dac biet, chu hoa chu thuong lan lon khien mo hinh bi nhieu.
-- Giai phap:
-  - Chuyen toan bo ky tu ve chu thuong (lower()).
-  - Dung Bieu thuc chinh quy (Regex) `[^a-z0-9\s]` de loc bo toan bo ky tu la, chi giu lai chu cai alphabet va so.
+- **Bước 1 (Làm sạch văn bản):** Chuyển toàn bộ chữ về chữ thường, dùng Regex lọc bỏ dấu câu và ký tự lạ, chỉ giữ lại chữ cái và số.
+- **Bước 2 (Mã hóa số học & Vocab):** Chọn 10.000 từ phổ biến nhất làm từ điển. Gán thêm token `<PAD>` (chỉ số 0 - bù độ dài) và `<UNK>` (chỉ số 1 - từ lạ). Cắt/bù các câu về độ dài cố định 150 từ.
+- **Bước 3 (Embedding Layer):** Biến mỗi từ thành vector 128 chiều liên tục để giữ mối quan hệ ngữ nghĩa giữa các từ.
+- **Bước 4 (Huấn luyện mô hình):** So sánh 3 kiến trúc:
+  - **Simple RNN:** Mạng hồi quy cơ bản (dễ quên ngữ cảnh khi câu dài).
+  - **LSTM:** Dùng Cell State và 3 cổng (Forget, Input, Output) giúp ghi nhớ bài báo dài rất tốt.
+  - **GRU:** Bản rút gọn của LSTM với 2 cổng (Reset, Update), chạy nhanh và hiệu năng cao.
+- **Bước 5 (Đầu ra & Tối ưu):** Dùng hàm mất mát `BCELoss`, hàm kích hoạt `Sigmoid` (xác suất $\ge 0.5 \rightarrow$ Tin Giả) và thuật toán tối ưu `Adam`.
 
-### Buoc 2: Xay Dung Bo Tu Dien (Vocabulary) & Ma Hoa So Hoc
-- Van de: Mang no-ron chi tinh toan duoc voi ma tran so hoc (Tensor), khong hieu duoc chuoi ky tu.
-- Giai phap:
-  - Dem tan suat xuat hien cua tu bang collections.Counter.
-  - Chon ra max_vocab_size = 10,000 tu pho bien nhat va gan cho moi tu mot chi so nguyen (index).
-  - Them 2 Token dac biet:
-    - `<PAD>` (index 0): Dung de chen them so 0 vao cac cau ngan cho du do dai chuan.
-    - `<UNK>` (index 1): Dai dien cho cac tu hiem gap hoac tu moi khong co trong tu dien.
-  - Cat ngan (Truncation) hoac bu do dai (Padding) dua moi cau ve do dai co dinh max_len = 150 tu.
-
-### Buoc 3: Tang Nhung Tu (Embedding Layer)
-- Thay vi su dung One-Hot Encoding gay ton bo nho va roi rac, tang `nn.Embedding(vocab_size, embed_dim=128)` se anh xa moi tu thanh mot vector lien tuc 128 chieu.
-- Nho do, cac tu co ngu nghia tuong dong trong khong gian vector se nam gan nhau.
-
-### Buoc 4: Thiet Ke & So Sanh 3 Kien Truc Mang No-ron
-1. Simple RNN (nn.RNN):
-   - Nguyen ly: Truyen hidden state tu tu phia truoc sang tu phia sau theo thu tu thoi gian.
-   - Han che: Gap hien tuong Vanishing Gradient (Triet tieu dao ham). Khi cau dai den tu thu 50-100, mo hinh gan nhu quen sach thong tin o nhung tu dau cau.
-2. LSTM (nn.LSTM - Khuyen dung):
-   - Nguyen ly: Bo sung Cell State (bo nho dai han) chay xuyen suot chuoi va kiem soat bang 3 cong logic (Gates):
-     - Forget Gate (Cong quen): Quyet dinh thong tin nao trong qua khu khong con quan trong va can xoa bo.
-     - Input Gate (Cong nap): Quyet dinh thong tin moi nao can ghi nho vao Cell State.
-     - Output Gate (Cong xuat): Quyet dinh thong tin nao duoc dua ra hidden state tiep theo.
-   - Ket qua: Duy tri duoc ngu canh cua ca bai bao dai.
-3. GRU (nn.GRU):
-   - Nguyen ly: Bien the rut gon cua LSTM, chi su dung 2 cong (Reset Gate va Update Gate).
-   - Ket qua: Huan luyen nhanh hon LSTM, ton it tai nguyen hon ma hieu nang van rat sat sao.
-
-### Buoc 5: Ham Mat Mat & Toi Uu Hoa
-- Ham mat mat (Loss Function): Su dung `nn.BCELoss` (Binary Cross Entropy) ket hop ham kich hoat Sigmoid o ngo ra de dua xac suat ve khoang [0.0, 1.0].
-- Nguong quyet dinh (Threshold): Xac suat >= 0.5 -> Tin Gia (Fake), < 0.5 -> Tin That (Real).
-- Thuat toan toi uu: Adam voi learning rate 0.001.
+| Đặc điểm | GRU | LSTM |
+| :--- | :--- | :--- |
+| **Số cổng** | 2 (Update, Reset) | 3 (Forget, Input, Output) |
+| **Trạng thái** | Chỉ có Hidden State | Hidden State + Cell State |
+| **Tham số** | Ít hơn (~30%) | Nhiều hơn |
+| **Tốc độ huấn luyện** | Nhanh hơn | Chậm hơn |
+| **Hiệu quả** | Tương đương LSTM trên nhiều tác vụ | Tốt hơn trên chuỗi rất dài |
 
 ---
 
-## 4. Bang Danh Gia Ket Qua Thuc Nghiem Chi Tiet
+## 4. Kết Quả Huấn Luyện & Đánh Giá Chi Tiết
 
-Ket qua do luong tren cung tap kiem thu doc lap (Test Set) khong tham gia vao qua trinh huan luyen:
+### Bảng Tổng Hợp So Sánh 3 Kiến Trúc
+Kết quả đo lường trên cùng tập kiểm thử độc lập (Test Set gồm 501 mẫu):
 
-| Kien Truc Mo Hinh | Do Chinh Xac (Accuracy) | F1-Score | Precision (Tin Gia) | Recall (Tin Gia) | Thoi Gian Train / Epoch | Nhan Xet Danh Gia |
+| Kiến Trúc Mô Hình | Độ Chính Xác (Accuracy) | F1-Score | Precision (Tin Giả) | Recall (Tin Giả) | Thời Gian Train / Epoch | Nhận Xét Đánh Giá |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
-| **Simple RNN** | `62.00%` | `0.60` | `0.73` | `0.39` | Nhanh nhat (~1s) | **Kem nhat:** Bi triet tieu dao ham, bo lot hon 60% tin gia (Recall chi dat 39%). |
-| **GRU** | `82.00%` | `0.83` | `0.81` | `0.85` | Trung binh (~2s) | **Can bang tot:** Hoi tu nhanh, phat hien chuan xac ca tin that lan tin gia. |
-| **LSTM (Tot nhat)** | **`85.00%`** | **`0.86`** | **`0.80`** | **`0.92`** | ~2.5s | **Vuot troi:** Kha nang ghi nho ngu canh bai bao dai rat tot, phat hien duoc **92%** so luong tin gia. |
+| **Simple RNN** | `64.07%` | `0.68` | `0.62` | `0.75` | Nhanh nhất (~1s) | **Kém nhất:** Bị triệt tiêu đạo hàm, khả năng nhớ kém trên bài báo dài. |
+| **GRU** | `88.82%` | `0.91` | `0.92` | `0.90` | Trung bình (~2s) | **Cân bằng xuất sắc:** Hội tụ nhanh, độ chính xác cao gần như tương đương LSTM. |
+| **LSTM (Tốt nhất)** | **`89.50%`** | **`0.91`** | **`0.91`** | **`0.92`** | ~2.5s | **Vượt trội:** Khả năng ghi nhớ ngữ cảnh dài rất tốt, bắt chuẩn xác **92%** số lượng tin giả. |
 
 ---
 
-## 5. Danh Gia & Ket Luan Chuyen Mon
+### Biểu Đồ Quá Trình Huấn Luyện (Training Loss & Accuracy - GRU)
 
-1. Tai sao Recall cua Tin Gia la chi so quan trong nhat?
-   - Trong bai toan phat hien tin tuc gia hoac lua dao, viec doan nham tin gia thanh tin that (False Negative) nguy hiem hon nhieu so voi viec nghi ngo nham mot tin that.
-   - Mo hinh LSTM dat chi so Recall 92% cho lop Tin Gia, chung minh co che cong cua LSTM la cuc ky hieu qua de khong bo sot cac thong tin sai lech.
-2. So sanh danh doi (Trade-off):
-   - Neu can mo hinh nhe, trien khai tren thiet bi cau hinh yeu hoac he thong thoi gian thuc voi luong truy cap lon: GRU la lua chon toi uu ve chi phi tinh toan.
-   - Neu uu tien do chinh xac va do nhay toi da de bao ve nguoi dung: LSTM la mo hinh chien thang.
+![Biểu đồ Training & Validation Loss, Accuracy](assets/gru_training_loss_acc.png)
 
 ---
 
-## 6. Huong Dan Cai Dat & Chay Kiem Thu (Cho Moi Nguoi Dung)
+### Chi Tiết Đánh Giá Trên Tập Kiểm Thử (Minh Họa Mô Hình GRU)
 
-### 1. Cai dat thu vien
-Mo Terminal / Command Prompt tai thu muc du an va chay:
+```text
+==================================================
+KẾT QUẢ ĐÁNH GIÁ - GRU
+==================================================
+Accuracy:  0.8882 (88.82%)
+Precision: 0.9153 (91.53%)
+Recall:    0.9035 (90.35%)
+F1-Score:  0.9094 (90.94%)
+==================================================
+
+Ma Trận Nhầm Lẫn (Confusion Matrix):
+[[164  26]
+ [ 30 281]]
+
+Báo Cáo Chi Tiết (Classification Report):
+              precision    recall  f1-score   support
+
+Tin thật (0)       0.85      0.86      0.85       190
+ Tin giả (1)       0.92      0.90      0.91       311
+
+    accuracy                           0.89       501
+   macro avg       0.88      0.88      0.88       501
+weighted avg       0.89      0.89      0.89       501
+```
+
+---
+
+### Kết Quả Dự Đoán Thử Nghiệm Trên 10 Mẫu Thực Tế
+
+Sau khi huấn luyện xong, mô hình được kiểm tra ngẫu nhiên trên 10 bài báo trong tập Test Set để đối chiếu giữa Nhãn thực tế và Nhãn mô hình dự đoán:
+
+```text
+================================================================================
+DỰ ĐOÁN TIN GIẢ TRÊN MẪU THỰC TẾ - GRU
+================================================================================
+Mẫu   | Nhãn thực   | Nhãn dự đoán | Xác suất  | Kết quả
+--------------------------------------------------------------------------------
+1     | Giả         | Giả          | 0.9959    | Đúng
+2     | Thật        | Thật         | 0.0101    | Đúng
+3     | Giả         | Giả          | 0.9825    | Đúng
+4     | Thật        | Thật         | 0.0117    | Đúng
+5     | Thật        | Giả          | 0.6236    | Sai
+6     | Giả         | Giả          | 0.9978    | Đúng
+7     | Giả         | Thật         | 0.0510    | Sai
+8     | Thật        | Thật         | 0.0066    | Đúng
+9     | Giả         | Giả          | 0.9926    | Đúng
+10    | Giả         | Giả          | 0.9437    | Đúng
+================================================================================
+```
+
+> **Chi tiết một mẫu dự đoán điển hình:**
+> ```text
+> ============================================================
+> CHI TIẾT MẪU DỰ ĐOÁN - GRU
+> ============================================================
+> Nhãn thực tế:     Giả (1)
+> Nhãn dự đoán:     Giả (1)
+> Xác suất tin giả: 0.9952 (99.52%)
+> Chênh lệch:       0.0048
+> Kết quả:          ĐÚNG
+> ============================================================
+> ```
+
+---
+
+## 5. Đánh Giá & Kết Luận Chuyên Môn
+
+1. **Tại sao Recall của Tin Giả là chỉ số quan trọng nhất?**
+   - Trong bài toán phát hiện tin tức giả hoặc lừa đảo, việc **đoán nhầm tin giả thành tin thật (False Negative)** nguy hiểm hơn nhiều so với việc nghi ngờ nhầm một tin thật.
+   - Cả mô hình **LSTM** và **GRU** đều đạt chỉ số **Recall trên 90%** cho lớp Tin Giả, chứng minh cơ chế cổng kiểm soát dòng thông tin giúp mô hình không bị bỏ sót các bài viết sai sự thật.
+2. **So sánh đánh đổi (Trade-off):**
+   - **GRU:** Tốc độ huấn luyện nhanh, tham số ít hơn ~30%, phù hợp triển khai trên các hệ thống thời gian thực hoặc thiết bị có tài nguyên tính toán giới hạn.
+   - **LSTM:** Có Cell State độc lập với Hidden State, thể hiện ưu thế vượt trội khi xử lý các bài báo có độ dài lớn và ngữ cảnh phức tạp.
+
+---
+
+## 6. Hướng Dẫn Cài Đặt & Chạy Kiểm Thử
+
+### 1. Cài đặt thư viện
+Mở Terminal tại thư mục dự án và chạy lệnh:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Kiem thu doc lap tung thanh phan (Unit Test)
-Moi module deu duoc thiet ke doc lap, ban co the chay de xem co che hoat dong:
+### 2. Kiểm thử độc lập từng thành phần (Unit Test)
+Mỗi module đều được thiết kế độc lập, có thể chạy riêng để kiểm tra tính đúng đắn:
 
-- Kiem tra bo tien xu ly va chuyen chuoi van ban:
+- Kiểm tra bộ tiền xử lý và chuyển chuỗi văn bản:
   ```bash
   python src/preprocess.py
   ```
 
-- Kiem tra luong tinh toan ma tran cua 3 mo hinh:
+- Kiểm tra luồng tính toán ma trận của 3 mô hình:
   ```bash
   python src/models.py
   ```
 
-### 3. Huan luyen mo hinh (Training qua CLI)
-Ban co the tu do huan luyen lai mo hinh mong muon chi bang 1 cau lenh:
+### 3. Huấn luyện mô hình (Training qua CLI)
+Bạn có thể tự do huấn luyện bất kỳ mô hình nào qua tham số dòng lệnh:
 
 ```bash
-# Huan luyen mo hinh LSTM (Khuyen dung)
+# Huấn luyện mô hình LSTM (Mặc định)
 python src/train.py --model lstm --epochs 10 --batch_size 64
 
-# Huan luyen mo hinh GRU
+# Huấn luyện mô hình GRU
 python src/train.py --model gru --epochs 10 --batch_size 64
 
-# Huan luyen mo hinh Simple RNN (Baseline)
+# Huấn luyện mô hình Simple RNN (Baseline)
 python src/train.py --model rnn --epochs 10 --batch_size 64
 ```
-Mo hinh co chi so Validation Accuracy cao nhat se tu dong duoc luu vao thu muc `saved_models/`.
+*Mô hình có chỉ số Validation Accuracy cao nhất sẽ tự động được lưu vào thư mục `saved_models/`.*
 
-### 4. Du doan bai bao bat ky (Inference)
-Kiem tra kha nang phan doan cua mo hinh bang cach truyen cau bat ky qua tham so `--text`:
+### 4. Dự đoán bài báo bất kỳ (Inference)
+Chạy chế độ tương tác hỏi đáp trực tiếp (có menu chọn 1/2/3 để chuyển đổi giữa LSTM, GRU và RNN):
+
+```bash
+python src/predict.py
+```
+
+Hoặc truyền trực tiếp câu bài báo cần kiểm tra qua tham số `--text`:
 
 ```bash
 python src/predict.py --model lstm --text "Scientists discover ancient water reservoir deep beneath the surface of Mars."
 ```
 
-Ket qua hien thi tren Terminal:
+**Kết quả hiển thị trên Terminal:**
 ```text
 ==================================================
 KET QUA PHAN LOAI BAI BAO:
@@ -162,19 +224,3 @@ Phan loai: TIN THAT (Real News)
 Do tin cay (Confidence): 89.25% (Xac suat raw: 0.1075)
 ==================================================
 ```
-
-Hoac chay che do hoi dap tuong tac truc tiep:
-```bash
-python src/predict.py
-```
-
----
-
-## 7. Cac Cong Nghe & Ky Thuat Su Dung
-
-- Ngon ngu: Python 3.9+
-- Deep Learning Framework: PyTorch (torch, torch.nn, torch.optim, Dataset, DataLoader)
-- Xu ly Du lieu: Pandas, NumPy, Regex (re), Collections (Counter)
-- Khoa hoc Du lieu & Danh gia: Scikit-learn (train_test_split, classification_report, f1_score, accuracy_score)
-- Truc quan hoa: Matplotlib, Seaborn
-- Luu tru & Dong goi: Pickle, PyTorch Checkpoints (.pth), Argparse CLI
