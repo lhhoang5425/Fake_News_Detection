@@ -76,78 +76,78 @@ Kết quả đo lường trên cùng tập kiểm thử độc lập (Test Set g
 | Kiến Trúc Mô Hình | Độ Chính Xác (Accuracy) | F1-Score | Precision (Tin Giả) | Recall (Tin Giả) | Thời Gian Train / Epoch | Nhận Xét Đánh Giá |
 | :--- | :---: | :---: | :---: | :---: | :---: | :--- |
 | **Simple RNN** | `64.07%` | `0.68` | `0.62` | `0.75` | Nhanh nhất (~1s) | **Kém nhất:** Bị triệt tiêu đạo hàm, khả năng nhớ kém trên bài báo dài. |
-| **GRU** | `88.82%` | `0.91` | `0.92` | `0.90` | Trung bình (~2s) | **Cân bằng xuất sắc:** Hội tụ nhanh, độ chính xác cao gần như tương đương LSTM. |
-| **LSTM (Tốt nhất)** | **`89.50%`** | **`0.91`** | **`0.91`** | **`0.92`** | ~2.5s | **Vượt trội:** Khả năng ghi nhớ ngữ cảnh dài rất tốt, bắt chuẩn xác **92%** số lượng tin giả. |
+| **GRU** | `88.82%` | `0.91` | `0.92` | `0.90` | Trung bình (~2s) | **Cân bằng xuất sắc:** Hội tụ nhanh, độ chính xác cao. |
+| **LSTM (Tốt nhất)** | **`90.42%`** | **`0.92`** | **`0.95`** | **`0.89`** | ~2.5s | **Vượt trội:** Khả năng ghi nhớ ngữ cảnh dài rất tốt, Precision tin giả đạt **95.19%**. |
 
 ---
 
-### Biểu Đồ Quá Trình Huấn Luyện (Training Loss & Accuracy - GRU)
+### Biểu Đồ Quá Trình Huấn Luyện (Training Loss & Accuracy - LSTM)
 
-![Biểu đồ Training & Validation Loss, Accuracy](assets/gru_training_loss_acc.png)
+![Biểu đồ Training & Validation Loss, Accuracy](assets/lstm_training_loss_acc.png)
 
 ---
 
-### Chi Tiết Đánh Giá Trên Tập Kiểm Thử (Minh Họa Mô Hình GRU)
+### Chi Tiết Đánh Giá Trên Tập Kiểm Thử (Minh Họa Mô Hình Tốt Nhất - LSTM)
 
 ```text
 ==================================================
-KẾT QUẢ ĐÁNH GIÁ - GRU
+KẾT QUẢ ĐÁNH GIÁ - LSTM
 ==================================================
-Accuracy:  0.8882 (88.82%)
-Precision: 0.9153 (91.53%)
-Recall:    0.9035 (90.35%)
-F1-Score:  0.9094 (90.94%)
+Accuracy:  0.9042 (90.42%)
+Precision: 0.9519 (95.19%)
+Recall:    0.8907 (89.07%)
+F1-Score:  0.9203 (92.03%)
 ==================================================
 
-Ma Trận Nhầm Lẫn (Confusion Matrix):
-[[164  26]
- [ 30 281]]
+Confusion Matrix:
+[[176  14]
+ [ 34 277]]
 
-Báo Cáo Chi Tiết (Classification Report):
+Classification Report:
               precision    recall  f1-score   support
 
-Tin thật (0)       0.85      0.86      0.85       190
- Tin giả (1)       0.92      0.90      0.91       311
+Tin thật (0)       0.84      0.93      0.88       190
+ Tin giả (1)       0.95      0.89      0.92       311
 
-    accuracy                           0.89       501
-   macro avg       0.88      0.88      0.88       501
-weighted avg       0.89      0.89      0.89       501
+    accuracy                           0.90       501
+   macro avg       0.89      0.91      0.90       501
+weighted avg       0.91      0.90      0.90       501
 ```
 
 ---
 
 ### Kết Quả Dự Đoán Thử Nghiệm Trên 10 Mẫu Thực Tế
 
-Sau khi huấn luyện xong, mô hình được kiểm tra ngẫu nhiên trên 10 bài báo trong tập Test Set để đối chiếu giữa Nhãn thực tế và Nhãn mô hình dự đoán:
+Sau khi huấn luyện xong, mô hình LSTM được kiểm tra ngẫu nhiên trên 10 bài báo trong tập Test Set để đối chiếu giữa Nhãn thực tế và Nhãn mô hình dự đoán:
 
 ```text
 ================================================================================
-DỰ ĐOÁN TIN GIẢ TRÊN MẪU THỰC TẾ - GRU
+DỰ ĐOÁN TIN GIẢ TRÊN MẪU THỰC TẾ - LSTM
 ================================================================================
-Mẫu   | Nhãn thực   | Nhãn dự đoán | Xác suất  | Kết quả
+Mẫu   | Nhãn thực  | Nhãn dự đoán | Xác suất   | Kết quả 
 --------------------------------------------------------------------------------
-1     | Giả         | Giả          | 0.9959    | Đúng
-2     | Thật        | Thật         | 0.0101    | Đúng
-3     | Giả         | Giả          | 0.9825    | Đúng
-4     | Thật        | Thật         | 0.0117    | Đúng
-5     | Thật        | Giả          | 0.6236    | Sai
-6     | Giả         | Giả          | 0.9978    | Đúng
-7     | Giả         | Thật         | 0.0510    | Sai
-8     | Thật        | Thật         | 0.0066    | Đúng
-9     | Giả         | Giả          | 0.9926    | Đúng
-10    | Giả         | Giả          | 0.9437    | Đúng
+1     | Giả        | Giả          | 0.9951     | Đúng
+2     | Thật       | Thật         | 0.0127     | Đúng
+3     | Giả        | Giả          | 0.9868     | Đúng
+4     | Thật       | Thật         | 0.0113     | Đúng
+5     | Thật       | Thật         | 0.0541     | Đúng
+6     | Giả        | Giả          | 0.9833     | Đúng
+7     | Giả        | Giả          | 0.5463     | Đúng
+8     | Thật       | Thật         | 0.0075     | Đúng
+9     | Giả        | Thật         | 0.1221     | Sai
+10    | Giả        | Giả          | 0.9659     | Đúng
 ================================================================================
 ```
 
 > **Chi tiết một mẫu dự đoán điển hình:**
 > ```text
 > ============================================================
-> CHI TIẾT MẪU DỰ ĐOÁN - GRU
+> CHI TIẾT MẪU DỰ ĐOÁN - LSTM
 > ============================================================
 > Nhãn thực tế:     Giả (1)
 > Nhãn dự đoán:     Giả (1)
-> Xác suất tin giả: 0.9952 (99.52%)
-> Chênh lệch:       0.0048
+> Xác suất tin giả: 0.9785 (97.85%)
+> Chênh lệch:       0.0215
 > Kết quả:          ĐÚNG
 > ============================================================
 > ```
