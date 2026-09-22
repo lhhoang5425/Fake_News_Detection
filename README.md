@@ -1,4 +1,4 @@
-# Nhận Diện Tin Tức Giả Bằng PyTorch (So Sánh RNN vs LSTM vs GRU)
+# Nhận Diện Tin Tức Giả (RNN - LSTM - GRU)
 
 Dự án Học Sâu (Deep Learning) toàn diện về bài toán phân loại văn bản: **Xác thực Tin Thật (Real News) hay Tin Giả (Fake News)** sử dụng thư viện **PyTorch thuần**. 
 
